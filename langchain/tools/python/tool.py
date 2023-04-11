@@ -49,7 +49,6 @@ class PythonAstREPLTool(BaseTool):
         "make sure it does not look abbreviated before using it in your answer."
     )
     globals: Optional[Dict] = Field(default_factory=dict)
-    locals: Optional[Dict] = Field(default_factory=dict)
 
     @root_validator(pre=True)
     def validate_python_version(cls, values: Dict) -> Dict:
@@ -67,7 +66,9 @@ class PythonAstREPLTool(BaseTool):
         try:
             tree = ast.parse(query)
             module = ast.Module(tree.body[:-1], type_ignores=[])
-            exec(ast.unparse(module), self.globals, self.locals)  # type: ignore
+            # exec needs globals == locals
+            # see https://stackoverflow.com/questions/2904274/globals-and-locals-in-python-exec
+            exec(command, self.globals, self.globals) # pylint: disable=exec-used
             module_end = ast.Module(tree.body[-1:], type_ignores=[])
             module_end_str = ast.unparse(module_end)  # type: ignore
             try:

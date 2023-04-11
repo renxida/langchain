@@ -10,14 +10,15 @@ class PythonREPL(BaseModel):
     """Simulates a standalone Python REPL."""
 
     globals: Optional[Dict] = Field(default_factory=dict, alias="_globals")
-    locals: Optional[Dict] = Field(default_factory=dict, alias="_locals")
 
     def run(self, command: str) -> str:
         """Run command with own globals/locals and returns anything printed."""
         old_stdout = sys.stdout
         sys.stdout = mystdout = StringIO()
         try:
-            exec(command, self.globals, self.locals)
+            # exec needs globals == locals
+            # see https://stackoverflow.com/questions/2904274/globals-and-locals-in-python-exec
+            exec(command, self.globals, self.globals) # pylint: disable=exec-used
             sys.stdout = old_stdout
             output = mystdout.getvalue()
         except Exception as e:
